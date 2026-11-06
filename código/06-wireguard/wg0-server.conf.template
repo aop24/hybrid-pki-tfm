@@ -1,0 +1,23 @@
+# /etc/wireguard/wg0.conf on the CA (ca) - management VPN hub (bitácora, bloque 09).
+# TEMPLATE: the private key is NOT included. It is generated on the CA with
+#   umask 077; wg genkey | tee /home/ca/wg-keys/server_private.key | wg pubkey > /home/ca/wg-keys/server_public.key
+# and inserted when the file is written (sudo tee ... <<EOF with PrivateKey = ${SERVER_PRIV}).
+# Public keys below are the ones of the lab (public data).
+[Interface]
+Address = 10.10.0.1/24
+ListenPort = 51820
+PrivateKey = <contents of /home/ca/wg-keys/server_private.key>
+SaveConfig = false
+
+[Peer]
+# client-01
+PublicKey = 0NaKUEErdCqL9dp1OwAZeoSVaD2AqoK+dVCzafUGsmo=
+AllowedIPs = 10.10.0.2/32
+
+[Peer]
+# client-02
+PublicKey = VcVWBi+OmMk46MtnXTVHW3TCXjHnB6X0rcj7XY221D4=
+AllowedIPs = 10.10.0.3/32
+
+# New peers: append a [Peer] block (next free address 10.10.0.N/32) and reload with
+#   sudo wg-quick down wg0 && sudo wg-quick up wg0

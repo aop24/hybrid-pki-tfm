@@ -1,0 +1,43 @@
+--- a/phc-client/src/phc_msg.c
++++ b/phc-client/src/phc_msg.c
+@@ -15,6 +15,7 @@
+  * the peer certificate is checked again every N seconds during the session, and
+  * the session is closed as soon as the peer must be rejected.
+  */
++#include <fcntl.h>
+ #include <poll.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -52,6 +53,23 @@
+     return 1;
+ }
+ 
++/* A readable socket does not mean a readable message: TLS 1.3 also sends post-handshake records
++ * (NewSessionTicket from the server). A blocking SSL_read on such a record would wait for the next
++ * application data and freeze the keyboard side. Peek without blocking first.
++ * Returns 1 = application data ready, 0 = nothing for the application, -1 = closed or error. */
++static int app_data_ready(SSL *ssl, int fd)
++{
++    int fl = fcntl(fd, F_GETFL);
++    fcntl(fd, F_SETFL, fl | O_NONBLOCK);
++    char c;
++    int r = SSL_peek(ssl, &c, 1);
++    int e = SSL_get_error(ssl, r);
++    fcntl(fd, F_SETFL, fl);
++    if (r > 0)
++        return 1;
++    return e == SSL_ERROR_WANT_READ ? 0 : -1;
++}
++
+ static void chat(SSL *ssl, int fd, const char *role)
+ {
+     const char *rc = getenv("PHC_RECHECK_SECS");
+@@ -94,6 +112,8 @@
+             }
+         }
+         if (SSL_pending(ssl) > 0 || (pfd[1].revents & (POLLIN | POLLHUP | POLLERR))) {
++            if (SSL_pending(ssl) == 0 && app_data_ready(ssl, fd) == 0)
++                continue; /* only a post-handshake record was read */
+             int r = receive_line(ssl);
+             if (r <= 0) {
+                 if (r < 0)
