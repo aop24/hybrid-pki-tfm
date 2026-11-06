@@ -1,0 +1,15 @@
+# /etc/wireguard/wg0.conf on a client node (client-01 = 10.10.0.2, client-02 = 10.10.0.3) (bitácora, bloque 09).
+# TEMPLATE: the private key is NOT included. It is generated on the client with
+#   umask 077; wg genkey | tee ~/wg-keys/<node>_private.key | wg pubkey > ~/wg-keys/<node>_public.key
+# and inserted when the file is written (PrivateKey = ${CLIENT_PRIV}).
+# Only 10.10.0.1/32 is routed through the tunnel: no client-to-client traffic via the CA.
+[Interface]
+Address = <10.10.0.N>/24
+PrivateKey = <contents of ~/wg-keys/<node>_private.key>
+
+[Peer]
+# ca (hub)
+PublicKey = <public key>
+Endpoint = 192.168.100.7:51820
+AllowedIPs = 10.10.0.1/32
+PersistentKeepalive = 25

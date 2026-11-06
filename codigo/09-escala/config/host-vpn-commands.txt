@@ -1,0 +1,4 @@
+# NAT Network rule added on the host (block 16)
+VBoxManage natnetwork modify --netname pkilab --port-forward-4 "wg-ca:udp:[127.0.0.1]:51820:[192.168.100.7]:51820"
+# peer added on the CA
+sudo wg set wg0 peer <public key> allowed-ips 10.10.0.4/32
